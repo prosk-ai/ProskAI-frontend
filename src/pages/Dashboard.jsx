@@ -10,6 +10,7 @@ import {
   Calendar,
   Award,
   Settings,
+  Sun, Moon,
   Bell,
   Search,
   Edit,
@@ -29,6 +30,8 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { Link } from 'react-router-dom'
+import { ToastContainer, toast } from 'react-toastify'; // ✨ NEW: Import toast
+import 'react-toastify/dist/ReactToastify.css';
 import api from '../api/api'; // Make sure this path is correct for your API utility
 import Logo from '../components/Logo';
 
@@ -72,6 +75,14 @@ const mockData = {
   }
 };
 
+const ThemeToggle = ({ theme, setTheme }) => {
+  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
+  return (
+    <button onClick={toggleTheme} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
+      {theme === 'light' ? <Moon className="w-5 h-5 text-gray-600" /> : <Sun className="w-5 h-5 text-yellow-400" />}
+    </button>
+  );
+};
 const StatCard = ({ title, value, change, icon: Icon, color, trend }) => (
   <motion.div
     whileHover={{ scale: 1.02 }}
@@ -264,6 +275,16 @@ const Dashboard = () => {
   const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
 
   useEffect(() => {
@@ -283,25 +304,19 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchUserProfiles = async () => {
-      if (profiles.length > 0 || isLoading) return;
+      // Prevent refetch if loading
+      if (isLoading) return;
 
       setIsLoading(true);
-      setError(null);
-
       try {
-        const userDataString = localStorage.getItem('user');
-        if (!userDataString) throw new Error("User not found. Please log in again.");
-
-        const user = JSON.parse(userDataString);
-        const userId = user.id;
-        if (!userId) throw new Error("User ID is missing. Please log in again.");
-
-        const response = await api.get(`/profiles/getprofiles/${userId}`);
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user?.id) throw new Error("User not found. Please log in again.");
+        const response = await api.get(`/profiles/getprofiles/${user.id}`);
         setProfiles(response.data);
-
       } catch (err) {
         console.error("Failed to fetch profiles:", err);
-        setError(err.message || "Could not load profiles.");
+        // ✨ Use toast for fetch error feedback
+        toast.error(err.message || "Could not load your profiles.");
       } finally {
         setIsLoading(false);
       }
@@ -310,26 +325,32 @@ const Dashboard = () => {
     if (activeTab === 'profiles') {
       fetchUserProfiles();
     }
-  }, [activeTab]);
+  }, [activeTab]); // Dependency array simplified for clarity
 
+
+  // ✨ UPDATED: handleDeleteProfile with toast notifications
   const handleDeleteProfile = async (profileId) => {
-    console.log("Attempting to delete profile:", profileId);
-    setIsLoading(true);
-    setError(null);
+    if (!window.confirm("Are you sure you want to delete this profile? This action cannot be undone.")) {
+      return;
+    }
+
+    const originalProfiles = [...profiles];
+    // Optimistically update UI
+    setProfiles(prevProfiles => prevProfiles.filter(p => p._id !== profileId));
 
     try {
       await api.delete(`/profiles/deleteprofile/${profileId}`);
-      setProfiles(prevProfiles => prevProfiles.filter(p => p._id !== profileId));
-      console.log("Profile deleted successfully:", profileId);
-      // Optionally, add a success notification here (e.g., toast)
+      // Show success toast
+      toast.success('Profile deleted successfully!');
     } catch (err) {
       console.error("Failed to delete profile:", err);
-      setError(err.response?.data?.message || err.message || "Could not delete profile.");
-      // Re-fetch profiles or show an error to the user
-    } finally {
-      setIsLoading(false);
+      // Show error toast
+      toast.error(err.response?.data?.message || "Could not delete profile.");
+      // Revert UI on failure
+      setProfiles(originalProfiles);
     }
   };
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}

@@ -502,7 +502,7 @@ export default function Home() {
           transition={{ duration: 0.6 }}
           className="text-gray-400 text-lg mb-12 font-medium px-4"
         >
-          Trusted by students and alumni from the world's leading universities.
+          Used by students and graduates from the world's leading universities.
         </motion.p>
 
         <div className="relative w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,white_10%,white_90%,transparent)]">
