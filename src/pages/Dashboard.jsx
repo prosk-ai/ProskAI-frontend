@@ -165,7 +165,7 @@ const ApplicationCard = ({ application }) => (
 );
 
 const ProfileCard = ({ profile, onDelete }) => {
-  
+
   const {
     profileName,
     updatedAt,
@@ -256,9 +256,9 @@ const ProfileCard = ({ profile, onDelete }) => {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+          <Link to={`/edit-profile/${_id}`} className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
             <Edit className="w-5 h-5" />
-          </button>
+          </Link>
           <button onClick={() => onDelete(_id)} className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
             <Trash2 className="w-5 h-5" />
           </button>
@@ -350,7 +350,7 @@ const Dashboard = () => {
       setProfiles(originalProfiles);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Header */}
@@ -359,8 +359,8 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10  rounded-xl flex items-center justify-center">
-                  <Logo/>
-                </div>
+                <Logo />
+              </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   ProskAI Dashboard
@@ -521,7 +521,7 @@ const Dashboard = () => {
                   trend="up"
                 />
               </div>
-          
+
               {/* Recent Applications */}
               <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 p-8">
                 <div className="flex items-center justify-between mb-6">
@@ -531,14 +531,14 @@ const Dashboard = () => {
                     New Application
                   </button>
                 </div>
-          
+
                 <div className="space-y-4">
                   {mockData.recentApplications.map((application) => (
                     <ApplicationCard key={application.id} application={application} />
                   ))}
                 </div>
               </div>
-          
+
               {/* Quick Actions */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <motion.div
@@ -561,7 +561,7 @@ const Dashboard = () => {
                     Optimize Now
                   </button>
                 </motion.div>
-          
+
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50 cursor-pointer"
@@ -582,7 +582,7 @@ const Dashboard = () => {
                     Create Letter
                   </button>
                 </motion.div>
-          
+
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-white/50 cursor-pointer"

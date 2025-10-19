@@ -9,9 +9,10 @@ import Home from './components/Home';
 import Signin from './pages/Signin';
 import Signup from './pages/Signup';
 import CreateProfile from './pages/CreateProfile';
-import CreateDemoProfile from './pages/CreateDemoProfile';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from "./middlewares/ProtectedRoute";
+import EditProfile from './pages/EditProfile';
+
 
 const App = () => {
   useEffect(() => {
@@ -40,9 +41,9 @@ const App = () => {
         <Route path="/signup" element={<Signup />} />
         <Route path="/signin" element={<Signin />} />
         <Route path="/createprofile" element={<CreateProfile />} />
-        <Route path="/createdemoprofile" element={<CreateDemoProfile />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/edit-profile/:profileId" element={<EditProfile />} /> 
         </Route>
       </Routes>
     </Router>
