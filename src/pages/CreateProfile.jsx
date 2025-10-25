@@ -257,7 +257,8 @@ const translateData = (data) => {
 
 const CreateProfile = () => {
   const [formData, setFormData] = useState(initialFormState);
-  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeFile, setResumeFile] = useState(null); // For parsing
+  const [manualResumeFile, setManualResumeFile] = useState(null); // For manual upload
   const [isParsing, setIsParsing] = useState(false); // For the parser
 
   const [isUploading, setIsUploading] = useState(false);
@@ -292,6 +293,14 @@ const CreateProfile = () => {
     setFormData(prev => ({ 
       ...prev, 
       resumeUrl: prev.resumeUrl === resumeFile?.name ? '' : prev.resumeUrl 
+    }));
+  };
+
+  const handleRemoveManualFile = () => {
+    setManualResumeFile(null);
+    setFormData(prev => ({ 
+      ...prev, 
+      resumeUrl: prev.resumeUrl === manualResumeFile?.name ? '' : prev.resumeUrl 
     }));
   };
   const handleArrayChange = useCallback((section, index, field, value) => {
@@ -369,15 +378,24 @@ const CreateProfile = () => {
     setIsSubmitting(true);
     let finalResumeUrl = formData.resumeUrl;
 
-    if (resumeFile) {
+    // Check if we have a resume file that needs to be uploaded
+    // This happens when user used parsing (resumeFile exists) OR manually uploaded a resume
+    if (resumeFile || manualResumeFile) {
       setIsUploading(true);
       const resumeFormData = new FormData();
-      resumeFormData.append('resume', resumeFile);
+      
+      // Use the appropriate file - prioritize parsing file, then manual file
+      const fileToUpload = resumeFile || manualResumeFile;
+      resumeFormData.append('resume', fileToUpload);
+
       try {
-        const uploadRes = await api.post('/profiles/upload-resume', resumeFormData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        const uploadRes = await api.post('/profiles/upload-resume', resumeFormData, { 
+          headers: { 'Content-Type': 'multipart/form-data' } 
+        });
         finalResumeUrl = uploadRes.data.resumeUrl;
         toast.success('Resume uploaded successfully!');
       } catch (error) {
+        console.error('Resume upload error:', error);
         toast.error('Resume upload failed. Please try again.');
         setIsSubmitting(false);
         setIsUploading(false);
@@ -393,6 +411,7 @@ const CreateProfile = () => {
       toast.success(response.data.message || 'Profile created successfully!');
       setFormData(initialFormState);
       setResumeFile(null);
+      setManualResumeFile(null);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to create profile.');
     } finally {
@@ -544,7 +563,7 @@ const CreateProfile = () => {
                                   <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">From parsing</span>
                                 )}
                               </div>
-                              <button type="button" onClick={() => setFormData(prev => ({ ...prev, resumeUrl: '' }))} className="p-1 text-red-500 hover:bg-red-100 rounded-full">
+                              <button type="button" onClick={handleRemoveManualFile} className="p-1 text-red-500 hover:bg-red-100 rounded-full">
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
@@ -557,7 +576,8 @@ const CreateProfile = () => {
                               <input type="file" name="profileResume" accept=".pdf,.doc,.docx" onChange={(e) => {
                                 const file = e.target.files[0];
                                 if (file) {
-                                  // This is for profile attachment, not parsing
+                                  // Store the file for upload and update the display
+                                  setManualResumeFile(file);
                                   setFormData(prev => ({ ...prev, resumeUrl: file.name }));
                                 }
                               }} className="hidden" />
