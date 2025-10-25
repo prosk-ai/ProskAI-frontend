@@ -9,6 +9,8 @@ import {
 import { toast } from 'react-toastify';
 import api from '../api/api';
 import Logo from '../components/Logo';
+import axios from 'axios'; // ✨ NEW: For making server-to-server requests
+import FormData from 'form-data';
 
 // --- Configuration and Constants ---
 const STEPS = [
@@ -47,6 +49,19 @@ const initialFormState = {
   experience: [], education: [], projects: [], certifications: [], languages: [], publications: []
 };
 
+// --- Helper Functions ---
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toISOString().split('T')[0];
+  } catch (error) {
+    console.warn('Invalid date format:', dateString);
+    return '';
+  }
+};
+
 // --- Reusable Sub-Components ---
 const ExperienceFormItem = ({ experience, index, handleChange, handleRemove }) => (
   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-6 mb-6 bg-white/80 rounded-2xl shadow-lg border">
@@ -55,8 +70,8 @@ const ExperienceFormItem = ({ experience, index, handleChange, handleRemove }) =
       <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Company *</label><input type="text" value={experience.company} onChange={(e) => handleChange(index, 'company', e.target.value)} required className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
       <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Role/Position *</label><input type="text" value={experience.role} onChange={(e) => handleChange(index, 'role', e.target.value)} required className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
       <div className="space-y-2 md:col-span-2"><label className="text-sm font-semibold text-gray-700">Experience Type *</label><select value={experience.experienceType} onChange={(e) => handleChange(index, 'experienceType', e.target.value)} required className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"><option>Job</option><option>Internship</option><option>Apprenticeship</option><option>Freelance</option></select></div>
-      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Start Date</label><input type="date" value={experience.startDate ? new Date(experience.startDate).toISOString().split('T')[0] : ''} onChange={(e) => handleChange(index, 'startDate', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">End Date</label><input type="date" value={experience.endDate ? new Date(experience.endDate).toISOString().split('T')[0] : ''} onChange={(e) => handleChange(index, 'endDate', e.target.value)} disabled={experience.isCurrent} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" /></div>
+      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Start Date</label><input type="date" value={formatDateForInput(experience.startDate)} onChange={(e) => handleChange(index, 'startDate', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
+      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">End Date</label><input type="date" value={formatDateForInput(experience.endDate)} onChange={(e) => handleChange(index, 'endDate', e.target.value)} disabled={experience.isCurrent} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" /></div>
       <div className="col-span-2 space-y-2"><label className="text-sm font-semibold text-gray-700">Description</label><textarea value={experience.description} onChange={(e) => handleChange(index, 'description', e.target.value)} rows="3" className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 resize-none" /></div>
     </div>
     <div className="mt-4"><label className="flex items-center cursor-pointer"><input type="checkbox" checked={experience.isCurrent} onChange={(e) => handleChange(index, 'isCurrent', e.target.checked)} className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" /> <span className="ml-2 text-gray-700">Currently work here</span></label></div>
@@ -93,8 +108,8 @@ const CertificationFormItem = ({ certification, index, handleChange, handleRemov
       <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Issuing Organization</label><input type="text" value={certification.issuer} onChange={(e) => handleChange(index, 'issuer', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
       <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Credential ID</label><input type="text" value={certification.credentialId} onChange={(e) => handleChange(index, 'credentialId', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
       <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Credential URL</label><input type="url" value={certification.credentialUrl} onChange={(e) => handleChange(index, 'credentialUrl', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Issue Date</label><input type="date" value={certification.issueDate ? new Date(certification.issueDate).toISOString().split('T')[0] : ''} onChange={(e) => handleChange(index, 'issueDate', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Expiry Date</label><input type="date" value={certification.expiryDate ? new Date(certification.expiryDate).toISOString().split('T')[0] : ''} onChange={(e) => handleChange(index, 'expiryDate', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
+      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Issue Date</label><input type="date" value={formatDateForInput(certification.issueDate)} onChange={(e) => handleChange(index, 'issueDate', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
+      <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Expiry Date</label><input type="date" value={formatDateForInput(certification.expiryDate)} onChange={(e) => handleChange(index, 'expiryDate', e.target.value)} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
     </div>
   </motion.div>
 );
@@ -123,9 +138,128 @@ const PublicationFormItem = ({ item, index, handleChange, handleRemove }) => (
   </motion.div>
 );
 
+const translateData = (data) => {
+  const translated = {};
+
+  // --- Basic Personal Info ---
+  if (data.name) {
+    const nameParts = data.name.split(' ');
+    translated.firstName = nameParts[0] || '';
+    translated.lastName = nameParts.slice(1).join(' ') || '';
+  }
+  if (data.email) translated.email = data.email;
+  if (data.phone) translated.phone = data.phone;
+  if (data.address) translated.street = data.address;
+  if (data.city) translated.city = data.city;
+  if (data.state) translated.state = data.state;
+  if (data.country) translated.country = data.country;
+  if (data.zip_code) translated.zipCode = data.zip_code;
+
+  // --- Professional Info ---
+  if (data.total_experience) translated.totalExperienceInYears = data.total_experience;
+  if (data.current_ctc) translated.currentCTC = data.current_ctc;
+  if (data.expected_ctc) translated.expectedCTC = data.expected_ctc;
+  if (data.preferred_locations && Array.isArray(data.preferred_locations)) {
+    translated.preferredLocations = data.preferred_locations.join(', ');
+  }
+
+  // --- Link Parsing ---
+  if (data.links && Array.isArray(data.links)) {
+    for (const link of data.links) {
+      if (link.includes('linkedin.com')) translated.linkedin = link;
+      else if (link.includes('github.com')) translated.github = link;
+      else if (link.includes('twitter.com') || link.includes('x.com')) translated.twitter = link;
+      else if (!translated.portfolio) translated.portfolio = link; // Use first other link as portfolio
+    }
+  }
+
+  // --- Skills and Achievements ---
+  if (data.skills && Array.isArray(data.skills)) {
+    translated.skills = data.skills.join(', ');
+  }
+  if (data.achievements && Array.isArray(data.achievements)) {
+    translated.achievements = data.achievements.join(', ');
+  }
+
+  // --- Education ---
+  if (data.education && Array.isArray(data.education)) {
+    translated.education = data.education.map(edu => ({
+      ...initialEducation,
+      school: edu.institution || edu.school || '',
+      degree: edu.degree || edu.qualification || '',
+      fieldOfStudy: edu.field_of_study || edu.major || '',
+      grade: edu.grade || edu.gpa || '',
+      startDate: formatDateForInput(edu.start_date) || '',
+      endDate: formatDateForInput(edu.end_date || edu.graduation_date) || '',
+    }));
+  }
+
+  // --- Experience ---
+  if (data.experience && Array.isArray(data.experience)) {
+    translated.experience = data.experience.map(exp => ({
+      ...initialExperience,
+      company: exp.company || exp.employer || '',
+      role: exp.role || exp.position || exp.title || '',
+      experienceType: exp.type || 'Job',
+      startDate: formatDateForInput(exp.start_date) || '',
+      endDate: formatDateForInput(exp.end_date) || '',
+      description: exp.description || exp.summary || '',
+      isCurrent: exp.is_current || exp.current || false,
+    }));
+  }
+
+  // --- Projects ---
+  if (data.projects && Array.isArray(data.projects)) {
+    translated.projects = data.projects.map(proj => ({
+      ...initialProject,
+      title: proj.title || proj.name || '',
+      description: proj.description || proj.summary || '',
+      technologies: Array.isArray(proj.technologies) ? proj.technologies.join(', ') : (proj.technologies || ''),
+      githubLink: proj.github_url || proj.github || '',
+      liveDemoLink: proj.demo_url || proj.live_url || proj.url || '',
+    }));
+  }
+
+  // --- Certifications ---
+  if (data.certifications && Array.isArray(data.certifications)) {
+    translated.certifications = data.certifications.map(cert => ({
+      ...initialCertification,
+      name: cert.name || cert.title || '',
+      issuer: cert.issuer || cert.organization || cert.issuing_organization || '',
+      issueDate: formatDateForInput(cert.issue_date || cert.date_issued) || '',
+      expiryDate: formatDateForInput(cert.expiry_date || cert.expiration_date) || '',
+      credentialId: cert.credential_id || cert.id || '',
+      credentialUrl: cert.credential_url || cert.url || '',
+    }));
+  }
+
+  // --- Languages ---
+  if (data.languages && Array.isArray(data.languages)) {
+    translated.languages = data.languages.map(lang => ({
+      ...initialLanguage,
+      language: lang.language || lang.name || '',
+      proficiency: lang.proficiency || lang.level || 'Conversational',
+    }));
+  }
+
+  // --- Publications ---
+  if (data.publications && Array.isArray(data.publications)) {
+    translated.publications = data.publications.map(pub => ({
+      ...initialPublication,
+      title: pub.title || pub.name || '',
+      link: pub.link || pub.url || '',
+      description: pub.description || pub.summary || '',
+    }));
+  }
+
+  return translated;
+};
+
 const CreateProfile = () => {
   const [formData, setFormData] = useState(initialFormState);
   const [resumeFile, setResumeFile] = useState(null);
+  const [isParsing, setIsParsing] = useState(false); // For the parser
+
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
@@ -143,15 +277,22 @@ const CreateProfile = () => {
   }, []);
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document")) {
-      setResumeFile(file);
+    if (!file) return;
+
+    if (file.type === "application/pdf" || file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+      setResumeFile(file); // Save the file for parsing
+      // Don't automatically parse - wait for user to click "Parse and Fill"
     } else {
       toast.error("Please select a valid PDF or DOCX file.");
     }
   };
   const handleRemoveFile = () => {
     setResumeFile(null);
-    setFormData(prev => ({ ...prev, resumeUrl: '' }));
+    // Only clear resumeUrl if it was the same file from parsing
+    setFormData(prev => ({ 
+      ...prev, 
+      resumeUrl: prev.resumeUrl === resumeFile?.name ? '' : prev.resumeUrl 
+    }));
   };
   const handleArrayChange = useCallback((section, index, field, value) => {
     setFormData(prev => {
@@ -177,6 +318,51 @@ const CreateProfile = () => {
       projects: data.projects.map(p => ({ ...p, technologies: processCommaString(p.technologies) })),
     };
   };
+
+  const parseAndFillForm = async () => {
+    if (!resumeFile) {
+      toast.error("Please select a resume file first.");
+      return;
+    }
+
+    setIsParsing(true);
+    const parseFormData = new FormData();
+    parseFormData.append('resume', resumeFile);
+
+    try {
+      // This calls your Node.js endpoint
+      const response = await api.post('/profiles/parse-resume', parseFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      const { parsedData } = response.data;
+      if (!parsedData) throw new Error("Parser returned no data.");
+
+      // Translate the Python schema to our frontend schema
+      const translatedData = translateData(parsedData);
+
+      // Update the form state with all the new data
+      setFormData(prev => ({
+        ...prev,
+        ...translatedData,
+        // Ensure arrays are initialized
+        experience: translatedData.experience || [],
+        education: translatedData.education || [],
+        // Automatically attach the parsed resume to the profile
+        resumeUrl: resumeFile.name,
+      }));
+
+      toast.success("Resume parsed, form filled, and attached to profile!");
+
+    } catch (error) {
+      console.error("Resume parsing failed:", error);
+      toast.error(error.response?.data?.message || "Failed to parse resume.");
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -273,6 +459,63 @@ const CreateProfile = () => {
                   {currentStep === 0 && (
                     <motion.div key="basic" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2 md:col-span-2 p-4 bg-blue-50/50 rounded-xl border border-blue-200/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-5 h-5 text-blue-600" />
+                            <label className="text-sm font-semibold text-gray-700">Option 1: Upload Resume for AI Parsing (PDF/DOCX)</label>
+                          </div>
+                          <p className="text-xs text-gray-500 mb-3">Let AI automatically fill your form by parsing your resume</p>
+
+                          {isParsing && (
+                            <div className="flex items-center justify-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                              <span className="ml-2 text-sm text-blue-800">AI is reading your resume...</span>
+                            </div>
+                          )}
+
+                          {!isParsing && resumeFile && (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <span className="text-sm text-green-800 truncate">{resumeFile.name}</span>
+                                <button type="button" onClick={handleRemoveFile} className="p-1 text-red-500 hover:bg-red-100 rounded-full">
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <motion.button
+                                type="button"
+                                onClick={parseAndFillForm}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full p-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-medium flex items-center justify-center gap-2 hover:from-blue-600 hover:to-purple-600 transition-all duration-300"
+                              >
+                                <Sparkles className="w-5 h-5" />
+                                Parse and Fill Form
+                              </motion.button>
+                            </div>
+                          )}
+
+                          {!isParsing && !resumeFile && (
+                            <label className="flex flex-col items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-md cursor-pointer hover:border-blue-400">
+                              <span className="flex items-center space-x-2">
+                                <UploadCloud className="w-6 h-6 text-gray-600" />
+                                <span className="font-medium text-gray-600">Click to upload resume</span>
+                              </span>
+                              <input type="file" name="resume" accept=".pdf,.doc,.docx" onChange={handleFileChange} className="hidden" />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* OR Divider - Full Width */}
+                      <div className="flex items-center my-6 w-full">
+                        <div className="flex-1 h-px bg-gray-300"></div>
+                        <div className="px-6 py-2 bg-white rounded-full border border-gray-300 shadow-sm mx-4">
+                          <span className="text-sm font-medium text-gray-500">OR</span>
+                        </div>
+                        <div className="flex-1 h-px bg-gray-300"></div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Profile Name *</label><input type="text" name="profileName" value={formData.profileName} onChange={handleInputChange} required className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
                         <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">First Name *</label><input type="text" name="firstName" value={formData.firstName} onChange={handleInputChange} required className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
                         <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Last Name *</label><input type="text" name="lastName" value={formData.lastName} onChange={handleInputChange} required className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
@@ -282,7 +525,45 @@ const CreateProfile = () => {
                           <div className="col-span-1 space-y-2"><label className="text-sm font-semibold text-gray-700">Country Code</label><input type="text" name="phoneCountryCode" value={formData.phoneCountryCode} onChange={handleInputChange} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
                           <div className="col-span-2 space-y-2"><label className="text-sm font-semibold text-gray-700">Phone Number</label><input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
                         </div>
-                        <div className="space-y-2 md:col-span-2"><label className="text-sm font-semibold">Upload Resume</label>{resumeFile || formData.resumeUrl ? (<div className="flex items-center justify-between p-3 bg-blue-50 border rounded-lg"><span className="truncate">{resumeFile?.name || 'Resume attached.'}</span><button type="button" onClick={handleRemoveFile} className="p-1 text-red-500"><X className="w-4 h-4" /></button></div>) : (<label className="flex flex-col items-center w-full h-32 px-4 border-2 border-dashed rounded-md cursor-pointer"><span className="flex items-center space-x-2"><UploadCloud /><span className="font-medium">Click to upload</span></span><input type="file" name="resume" accept=".pdf,.doc,.docx" onChange={handleFileChange} className="hidden" /></label>)}</div>
+                        <div className="space-y-2 md:col-span-2 p-4 bg-green-50/50 rounded-xl border border-green-200/50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <UploadCloud className="w-5 h-5 text-green-600" />
+                            <label className="text-sm font-semibold text-gray-700">Option 2: Manually Attach Resume to Profile</label>
+                          </div>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {resumeFile && formData.resumeUrl === resumeFile.name 
+                              ? "✅ Same resume from parsing is attached to profile" 
+                              : "Upload a resume to attach to your final profile"}
+                          </p>
+                          {formData.resumeUrl ? (
+                            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span className="truncate text-green-800 font-medium">{formData.resumeUrl}</span>
+                                {resumeFile && formData.resumeUrl === resumeFile.name && (
+                                  <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">From parsing</span>
+                                )}
+                              </div>
+                              <button type="button" onClick={() => setFormData(prev => ({ ...prev, resumeUrl: '' }))} className="p-1 text-red-500 hover:bg-red-100 rounded-full">
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="flex flex-col items-center w-full h-24 px-4 border-2 border-dashed rounded-md cursor-pointer hover:border-blue-400 transition-colors">
+                              <span className="flex items-center space-x-2">
+                                <UploadCloud className="w-5 h-5 text-gray-600" />
+                                <span className="font-medium text-gray-600">Upload resume to attach</span>
+                              </span>
+                              <input type="file" name="profileResume" accept=".pdf,.doc,.docx" onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  // This is for profile attachment, not parsing
+                                  setFormData(prev => ({ ...prev, resumeUrl: file.name }));
+                                }
+                              }} className="hidden" />
+                            </label>
+                          )}
+                        </div>
                       </div>
                       <div className="space-y-4 pt-4 border-t">
                         <h4 className="font-semibold text-gray-900">Social Links</h4>
@@ -331,8 +612,8 @@ const CreateProfile = () => {
                       <div className="space-y-4 pt-4 border-t border-gray-200">
                         <h4 className="text-lg font-semibold text-gray-900">Work Authorization</h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Nationality</label><input type="text" name="nationality" value={formData.nationality} onChange={handleInputChange} placeholder="e.g., Indian" className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                        <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Citizenship Status</label><input type="text" name="citizenshipStatus" value={formData.citizenshipStatus} onChange={handleInputChange} placeholder="e.g., Citizen, Visa Holder" className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
+                          <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Nationality</label><input type="text" name="nationality" value={formData.nationality} onChange={handleInputChange} placeholder="e.g., Indian" className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
+                          <div className="space-y-2"><label className="text-sm font-semibold text-gray-700">Citizenship Status</label><input type="text" name="citizenshipStatus" value={formData.citizenshipStatus} onChange={handleInputChange} placeholder="e.g., Citizen, Visa Holder" className="p-4 w-full bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
                           <div className="space-y-2"><p className="text-sm font-semibold text-gray-700">Authorized to work in the USA?</p><div className="flex gap-4 items-center pt-2"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="usAuthorized" value="yes" checked={formData.usAuthorized === true} onChange={() => handleRadioChange('usAuthorized', 'yes')} /> Yes</label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="usAuthorized" value="no" checked={formData.usAuthorized === false} onChange={() => handleRadioChange('usAuthorized', 'no')} /> No</label></div></div>
                           <div className="space-y-2"><p className="text-sm font-semibold text-gray-700">Need visa sponsorship?</p><div className="flex gap-4 items-center pt-2"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="sponsorshipRequired" value="yes" checked={formData.sponsorshipRequired === true} onChange={() => handleRadioChange('sponsorshipRequired', 'yes')} /> Yes</label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="sponsorshipRequired" value="no" checked={formData.sponsorshipRequired === false} onChange={() => handleRadioChange('sponsorshipRequired', 'no')} /> No</label></div></div>
                         </div>
@@ -374,12 +655,14 @@ const CreateProfile = () => {
                   )}
                 </AnimatePresence>
                 <div className="flex justify-between items-center mt-8 pt-6 border-t">
-                  <motion.button type="button" onClick={prevStep} disabled={currentStep === 0} className="..."><ChevronLeft /> Previous</motion.button>
+                  <motion.button type="button" onClick={prevStep} disabled={currentStep === 0} /* ... */>Previous</motion.button>
                   {currentStep < STEPS.length - 1 ? (
-                    <motion.button type="button" onClick={nextStep} className="... bg-gradient-to-r from-blue-600 ...">Next <ChevronRight /></motion.button>
+                    <motion.button type="button" onClick={nextStep} /* ... */>Next</motion.button>
                   ) : (
-                    <motion.button type="submit" disabled={isSubmitting} className="... bg-gradient-to-r from-green-600 ...">
-                      {isSubmitting ? <><Loader2 className="animate-spin" /> {isUploading ? 'Uploading...' : 'Saving...'}</> : <><Save /> Create Profile</>}
+                    <motion.button type="submit" disabled={isSubmitting || isParsing} /* ... */>
+                      {isParsing ? <><Loader2 className="animate-spin" /> Parsing...</> :
+                        isSubmitting ? <><Loader2 className="animate-spin" /> {isUploading ? 'Uploading...' : 'Saving...'}</> :
+                          <><Save /> Create Profile</>}
                     </motion.button>
                   )}
                 </div>
