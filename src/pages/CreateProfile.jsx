@@ -53,14 +53,47 @@ const initialFormState = {
 const formatDateForInput = (dateString) => {
   if (!dateString) return '';
   try {
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return date.toISOString().split('T')[0];
+    // Normalize to lowercase for flexible parsing
+    const ds = dateString.trim().toLowerCase();
+
+    // Try to match formats like "Mar 2025" or "March 2025"
+    const monthMap = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, sept: 8, oct: 9, nov: 10, dec: 11
+    };
+
+    const parts = ds.split(/[\s,.-]+/).filter(Boolean);
+    let month = null, year = null, day = 1;
+
+    for (const part of parts) {
+      if (!isNaN(part) && part.length === 4) year = parseInt(part);
+      else {
+        const key = part.slice(0, 3);
+        if (monthMap[key] !== undefined) month = monthMap[key];
+      }
+    }
+
+    if (year && month !== null) {
+      // Always first day of that month
+      const date = new Date(Date.UTC(year, month, 1));
+      return date.toISOString().split('T')[0];
+    }
+
+    // fallback to normal parsing
+    const parsed = new Date(dateString);
+    if (!isNaN(parsed.getTime())) {
+      // Always set to first day of that month
+      parsed.setUTCDate(1);
+      return parsed.toISOString().split('T')[0];
+    }
+
+    return '';
   } catch (error) {
-    console.warn('Invalid date format:', dateString);
+    console.warn('Invalid date format:', dateString, error);
     return '';
   }
 };
+
 
 // --- Reusable Sub-Components ---
 const ExperienceFormItem = ({ experience, index, handleChange, handleRemove }) => (
@@ -191,7 +224,9 @@ const translateData = (data) => {
       grade: edu.grade || edu.gpa || '',
       startDate: formatDateForInput(edu.start_date) || '',
       endDate: formatDateForInput(edu.end_date || edu.graduation_date) || '',
-    }));
+    })
+    );
+
   }
 
   // --- Experience ---
@@ -199,11 +234,13 @@ const translateData = (data) => {
     translated.experience = data.experience.map(exp => ({
       ...initialExperience,
       company: exp.company || exp.employer || '',
-      role: exp.role || exp.position || exp.title || '',
+      // Enhanced role mapping to include more common parser output keys
+      role: exp.role || exp.position || exp.title || exp.job_title || exp.position_title || '',
       experienceType: exp.type || 'Job',
       startDate: formatDateForInput(exp.start_date) || '',
       endDate: formatDateForInput(exp.end_date) || '',
-      description: exp.description || exp.summary || '',
+      // Enhanced description mapping to include more common parser output keys and handle bullet points
+      description: exp.description || exp.summary || exp.details || exp.responsibilities || (Array.isArray(exp.bullet_points) ? exp.bullet_points.join('\n') : '') || '',
       isCurrent: exp.is_current || exp.current || false,
     }));
   }
@@ -290,17 +327,17 @@ const CreateProfile = () => {
   const handleRemoveFile = () => {
     setResumeFile(null);
     // Only clear resumeUrl if it was the same file from parsing
-    setFormData(prev => ({ 
-      ...prev, 
-      resumeUrl: prev.resumeUrl === resumeFile?.name ? '' : prev.resumeUrl 
+    setFormData(prev => ({
+      ...prev,
+      resumeUrl: prev.resumeUrl === resumeFile?.name ? '' : prev.resumeUrl
     }));
   };
 
   const handleRemoveManualFile = () => {
     setManualResumeFile(null);
-    setFormData(prev => ({ 
-      ...prev, 
-      resumeUrl: prev.resumeUrl === manualResumeFile?.name ? '' : prev.resumeUrl 
+    setFormData(prev => ({
+      ...prev,
+      resumeUrl: prev.resumeUrl === manualResumeFile?.name ? '' : prev.resumeUrl
     }));
   };
   const handleArrayChange = useCallback((section, index, field, value) => {
@@ -349,6 +386,7 @@ const CreateProfile = () => {
 
       // Translate the Python schema to our frontend schema
       const translatedData = translateData(parsedData);
+      
 
       // Update the form state with all the new data
       setFormData(prev => ({
@@ -357,6 +395,10 @@ const CreateProfile = () => {
         // Ensure arrays are initialized
         experience: translatedData.experience || [],
         education: translatedData.education || [],
+        projects: translatedData.projects || [], // Ensure projects are initialized
+        certifications: translatedData.certifications || [], // Ensure certifications are initialized
+        languages: translatedData.languages || [], // Ensure languages are initialized
+        publications: translatedData.publications || [], // Ensure publications are initialized
         // Automatically attach the parsed resume to the profile
         resumeUrl: resumeFile.name,
       }));
@@ -383,14 +425,14 @@ const CreateProfile = () => {
     if (resumeFile || manualResumeFile) {
       setIsUploading(true);
       const resumeFormData = new FormData();
-      
+
       // Use the appropriate file - prioritize parsing file, then manual file
       const fileToUpload = resumeFile || manualResumeFile;
       resumeFormData.append('resume', fileToUpload);
 
       try {
-        const uploadRes = await api.post('/profiles/upload-resume', resumeFormData, { 
-          headers: { 'Content-Type': 'multipart/form-data' } 
+        const uploadRes = await api.post('/profiles/upload-resume', resumeFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
         finalResumeUrl = uploadRes.data.resumeUrl;
         toast.success('Resume uploaded successfully!');
@@ -550,8 +592,8 @@ const CreateProfile = () => {
                             <label className="text-sm font-semibold text-gray-700">Option 2: Manually Attach Resume to Profile</label>
                           </div>
                           <p className="text-xs text-gray-500 mb-2">
-                            {resumeFile && formData.resumeUrl === resumeFile.name 
-                              ? "✅ Same resume from parsing is attached to profile" 
+                            {resumeFile && formData.resumeUrl === resumeFile.name
+                              ? "✅ Same resume from parsing is attached to profile"
                               : "Upload a resume to attach to your final profile"}
                           </p>
                           {formData.resumeUrl ? (
@@ -696,14 +738,18 @@ const CreateProfile = () => {
                   )}
                 </AnimatePresence>
                 <div className="flex justify-between items-center mt-8 pt-6 border-t">
-                  <motion.button type="button" onClick={prevStep} disabled={currentStep === 0} /* ... */>Previous</motion.button>
+                  <motion.button type="button" onClick={prevStep} disabled={currentStep === 0} className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-medium flex items-center gap-2 hover:bg-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <ChevronLeft className="w-5 h-5" /> Previous
+                  </motion.button>
                   {currentStep < STEPS.length - 1 ? (
-                    <motion.button type="button" onClick={nextStep} /* ... */>Next</motion.button>
+                    <motion.button type="button" onClick={nextStep} className="px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-medium flex items-center gap-2 hover:from-blue-600 hover:to-purple-600 transition-all duration-300">
+                      Next <ChevronRight className="w-5 h-5" />
+                    </motion.button>
                   ) : (
-                    <motion.button type="submit" disabled={isSubmitting || isParsing} /* ... */>
-                      {isParsing ? <><Loader2 className="animate-spin" /> Parsing...</> :
-                        isSubmitting ? <><Loader2 className="animate-spin" /> {isUploading ? 'Uploading...' : 'Saving...'}</> :
-                          <><Save /> Create Profile</>}
+                    <motion.button type="submit" disabled={isSubmitting || isParsing} className="px-6 py-3 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-xl font-medium flex items-center gap-2 hover:from-green-600 hover:to-teal-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                      {isParsing ? <><Loader2 className="animate-spin w-5 h-5" /> Parsing...</> :
+                        isSubmitting ? <><Loader2 className="animate-spin w-5 h-5" /> {isUploading ? 'Uploading...' : 'Saving...'}</> :
+                          <><Save className="w-5 h-5" /> Create Profile</>}
                     </motion.button>
                   )}
                 </div>
