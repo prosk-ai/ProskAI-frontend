@@ -420,8 +420,6 @@ const CreateProfile = () => {
     setIsSubmitting(true);
     let finalResumeUrl = formData.resumeUrl;
 
-    // Check if we have a resume file that needs to be uploaded
-    // This happens when user used parsing (resumeFile exists) OR manually uploaded a resume
     if (resumeFile || manualResumeFile) {
       setIsUploading(true);
       const resumeFormData = new FormData();
