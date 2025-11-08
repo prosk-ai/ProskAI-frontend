@@ -10,7 +10,6 @@ import {
   Calendar,
   Award,
   Settings,
-  Sun, Moon,
   Bell,
   Search,
   Edit,
@@ -267,17 +266,7 @@ const Dashboard = () => {
   const [profiles, setProfiles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
+ 
 
   useEffect(() => {
     const userDataString = localStorage.getItem('user');
@@ -294,6 +283,7 @@ const Dashboard = () => {
     }
   }, []); 
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const fetchUserProfiles = async () => {
       // Prevent refetch if loading

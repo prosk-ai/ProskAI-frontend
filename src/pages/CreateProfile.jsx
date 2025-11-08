@@ -62,7 +62,7 @@ const formatDateForInput = (dateString) => {
     };
 
     const parts = ds.split(/[\s,.-]+/).filter(Boolean);
-    let month = null, year = null, day = 1;
+    let month = null, year = null;
 
     for (const part of parts) {
       if (!isNaN(part) && part.length === 4) year = parseInt(part);

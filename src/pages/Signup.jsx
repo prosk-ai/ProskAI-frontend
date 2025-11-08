@@ -199,11 +199,11 @@ export default function Signup() {
             >
               <p>
                 By creating an account, you agree to our{" "}
-                <a href="#" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                <a href="/terms-of-service" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="#" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                <a href="/privacy-policy" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">
                   Privacy Policy
                 </a>
               </p>
