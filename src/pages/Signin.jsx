@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import api from "../api/api";
 import { setToken,setUser } from "../utils/auth";
 import { Link, useNavigate } from "react-router-dom";

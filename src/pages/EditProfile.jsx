@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Trash2, PlusCircle, Save, Sparkles, User, MapPin, Briefcase,
-    GraduationCap, Code, Award, Target, ChevronRight, ChevronLeft,
+    Trash2, Save, User, MapPin, Briefcase,
+    GraduationCap, Code, Award,  ChevronRight, ChevronLeft,
     CheckCircle, UserCheck, Star, BookOpen, Globe, Users, Loader2 // Added Loader2
 } from 'lucide-react';
 import { toast } from 'react-toastify';

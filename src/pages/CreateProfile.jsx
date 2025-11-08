@@ -2,14 +2,13 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trash2, PlusCircle, Save, Sparkles, User, MapPin, Briefcase,
-  GraduationCap, Code, Award, Target, ChevronRight, ChevronLeft,
+  GraduationCap, Code, Award,  ChevronRight, ChevronLeft,
   CheckCircle, UserCheck, Star, BookOpen, Globe, Users,
   UploadCloud, X, Loader2 // Added missing icons
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import api from '../api/api';
 import Logo from '../components/Logo';
-import axios from 'axios'; // ✨ NEW: For making server-to-server requests
 import FormData from 'form-data';
 
 // --- Configuration and Constants ---

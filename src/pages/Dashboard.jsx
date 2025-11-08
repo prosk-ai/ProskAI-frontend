@@ -30,7 +30,7 @@ import {
   MoreHorizontal,
 } from 'lucide-react';
 import { Link } from 'react-router-dom'
-import { ToastContainer, toast } from 'react-toastify'; // ✨ NEW: Import toast
+import { toast } from 'react-toastify'; // ✨ NEW: Import toast
 import 'react-toastify/dist/ReactToastify.css';
 import api from '../api/api'; // Make sure this path is correct for your API utility
 import Logo from '../components/Logo';
@@ -75,14 +75,6 @@ const mockData = {
   }
 };
 
-const ThemeToggle = ({ theme, setTheme }) => {
-  const toggleTheme = () => setTheme(theme === 'light' ? 'dark' : 'light');
-  return (
-    <button onClick={toggleTheme} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-      {theme === 'light' ? <Moon className="w-5 h-5 text-gray-600" /> : <Sun className="w-5 h-5 text-yellow-400" />}
-    </button>
-  );
-};
 const StatCard = ({ title, value, change, icon: Icon, color, trend }) => (
   <motion.div
     whileHover={{ scale: 1.02 }}
@@ -300,7 +292,7 @@ const Dashboard = () => {
         setUserInitials(initials.toUpperCase());
       }
     }
-  }, []); // The empty array [] ensures this runs only once
+  }, []); 
 
   useEffect(() => {
     const fetchUserProfiles = async () => {

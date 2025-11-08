@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
-import { User, Mail, Lock, XCircle, CheckCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, XCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import api from "../api/api";
 import { setToken,setUser } from "../utils/auth";
 import { Link, useNavigate } from 'react-router-dom'
